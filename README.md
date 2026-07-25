@@ -184,6 +184,15 @@ Clone this repository and run the installer:
 git clone https://github.com/Nexus-N3/nexus-n3-plugin-tooling.git
 cd nexus-n3-plugin-tooling
 ./install.sh
+
+on windows
+./install_win.sh
+
+```
+on windows if the nexus-n3-plugin command is not available reload the Git Bash configuration:
+
+```bash
+source ~/.bashrc
 ```
 
 The installer creates or reuses `.venv` inside the tooling repository.
