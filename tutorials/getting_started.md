@@ -30,6 +30,11 @@ Install the tooling:
 cd /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-tooling
 ./install.sh
 ```
+on windows
+```bash
+./install_win.sh
+source ~/.bashrc
+```
 
 This creates or reuses the tooling virtual environment:
 
