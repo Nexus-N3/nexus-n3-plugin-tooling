@@ -199,10 +199,43 @@ The installer creates or reuses `.venv` inside the tooling repository.
 
 It installs the SDK and CLI in editable mode and validates that `nexus-n3-plugin` can start.
 
+## Prepare Plugins From A Catalog Checkout
+
+Plugin `.venv` directories are local development artifacts and are not
+committed to the catalog. After cloning the catalog, prepare an individual
+plugin with:
+
+```bash
+nexus-n3-plugin prepare \
+  --plugin-root /path/to/nexus-n3-plugin-catalog/sensors/nexus-n3-sensor-movella-dot
+```
+
+The command creates the plugin environment and installs its build tooling, the
+local Nexus N3 plugin SDK, and the plugin itself. It supports native Windows
+and POSIX virtual-environment layouts.
+
+The `build` command also prepares a plugin automatically when its `.venv` is
+missing. To build every sensor and algorithm in the catalog:
+
+```bash
+nexus-n3-plugin build \
+  --catalog-root /path/to/nexus-n3-plugin-catalog \
+  --output-dir /path/to/nexus-n3-plugin-catalog/plugin-builds \
+  --target win
+```
+
+Bundles are written below `plugin-builds/sensors/` and
+`plugin-builds/algorithms/`.
+
 Activate the tooling environment:
 
 ```bash
+# Linux, macOS, or WSL
 source .venv/bin/activate
+
+# Native Windows from Git Bash
+source .venv/Scripts/activate
+
 nexus-n3-plugin --help
 ```
 
@@ -667,23 +700,18 @@ Conceptually:
 nexus-n3-plugin build
   -> locate plugin root
   -> locate plugin .venv
-  -> use <plugin-root>/.venv/bin/python
+  -> use the platform-specific Python in <plugin-root>/.venv
   -> build the plugin wheel
   -> include the SDK wheel
   -> collect bundle artifacts
   -> write .rsnxplugin
 ```
 
-If the plugin environment is missing, the CLI should report a clear error:
+If the plugin environment is missing or incomplete, the CLI prepares it before
+building. Preparation can also be run explicitly:
 
-```text
-Plugin environment not found.
-
-Expected:
-  <plugin-root>/.venv
-
-This usually means the plugin was not created with nexus-n3-plugin init
-or the environment has been deleted.
+```bash
+nexus-n3-plugin prepare --plugin-root /path/to/plugin
 ```
 
 ## Build Output
@@ -1037,7 +1065,7 @@ Preferred behavior:
 
 ```text
 nexus-n3-plugin build
-  uses <plugin-root>/.venv/bin/python
+  uses the platform-specific Python in <plugin-root>/.venv
 ```
 
 Avoid this behavior:

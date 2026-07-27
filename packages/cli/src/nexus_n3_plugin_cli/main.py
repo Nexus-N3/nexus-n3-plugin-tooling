@@ -15,10 +15,14 @@ from nexus_n3_plugin_cli.scaffold.sensor import scaffold_sensor_plugin
 from nexus_n3_plugin_cli.build import DependencyTarget, build_plugin_bundle
 from nexus_n3_plugin_cli.install import install_bundle
 from nexus_n3_plugin_cli.plugin_env import (
+    plugin_venv_is_prepared,
     prepare_plugin_venv,
     resolve_plugin_python,
     resolve_plugin_site_packages,
+    resolve_venv_python,
+    resolve_venv_site_packages,
 )
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the top-level CLI parser."""
@@ -96,16 +100,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow writing into an existing empty target directory",
     )
 
-    build_parser = subparsers.add_parser("build", help="Build a .rsnxplugin bundle for nexus-n3-core")
-    build_parser.add_argument(
+    prepare_parser = subparsers.add_parser(
+        "prepare",
+        help="Create or refresh an existing plugin's development environment",
+    )
+    prepare_parser.add_argument(
         "--plugin-root",
         default=".",
+        help="Existing plugin source repository to prepare",
+    )
+    prepare_parser.add_argument(
+        "--sdk-root",
+        help="Optional path to the local nexus-n3-plugin-sdk source",
+    )
+
+    build_parser = subparsers.add_parser("build", help="Build a .rsnxplugin bundle for nexus-n3-core")
+    build_source_group = build_parser.add_mutually_exclusive_group()
+    build_source_group.add_argument(
+        "--plugin-root",
         help="Plugin source repository to build",
+    )
+    build_source_group.add_argument(
+        "--catalog-root",
+        help="Catalog repository whose sensor and algorithm plugins should all be built",
     )
     build_parser.add_argument(
         "--output-dir",
         default="plugin-build",
-        help="Directory where the .rsnxplugin bundle should be created",
+        help="Bundle output directory; catalog builds create sensors/ and algorithms/ below it",
     )
     build_parser.add_argument(
         "--sdk-root",
@@ -388,6 +410,13 @@ def main() -> int:
             prepare_plugin_venv(plugin_root)
             return 0
 
+        if args.command == "prepare":
+            prepare_plugin_venv(
+                Path(args.plugin_root),
+                sdk_root=Path(args.sdk_root) if args.sdk_root else None,
+            )
+            return 0
+
         if args.command == "build":
             dependency_target = DependencyTarget.from_preset(args.target)
             if args.target_platform:
@@ -406,17 +435,34 @@ def main() -> int:
                     implementation=args.target_implementation or dependency_target.implementation,
                     abi=args.target_abi or dependency_target.abi,
                 )
-            build_plugin_bundle(
-                plugin_root=Path(args.plugin_root),
-                output_dir=Path(args.output_dir),
-                force=args.force,
-                sdk_root=Path(args.sdk_root) if args.sdk_root else None,
-                include_sdk=not args.no_sdk,
-                include_dependencies=not args.slim,
-                dependency_target=dependency_target,
-                extra_artifacts=[Path(path) for path in args.artifact],
-                dependency_wheelhouses=[Path(path) for path in args.wheelhouse],
+            plugin_roots = (
+                _discover_catalog_plugins(Path(args.catalog_root))
+                if args.catalog_root
+                else [(None, Path(args.plugin_root or "."))]
             )
+            for family, plugin_root in plugin_roots:
+                plugin_root = plugin_root.resolve()
+                if not plugin_venv_is_prepared(plugin_root):
+                    print(f"Preparing plugin environment: {plugin_root}")
+                    prepare_plugin_venv(
+                        plugin_root,
+                        sdk_root=Path(args.sdk_root) if args.sdk_root else None,
+                    )
+                plugin_output_dir = (
+                    Path(args.output_dir) / family if family is not None else Path(args.output_dir)
+                )
+                bundle_path = build_plugin_bundle(
+                    plugin_root=plugin_root,
+                    output_dir=plugin_output_dir,
+                    force=args.force,
+                    sdk_root=Path(args.sdk_root) if args.sdk_root else None,
+                    include_sdk=not args.no_sdk,
+                    include_dependencies=not args.slim,
+                    dependency_target=dependency_target,
+                    extra_artifacts=[Path(path) for path in args.artifact],
+                    dependency_wheelhouses=[Path(path) for path in args.wheelhouse],
+                )
+                print(f"Built {bundle_path}")
             return 0
 
         if args.command == "install":
@@ -758,7 +804,7 @@ def _read_bundle_manifest(extracted_root: Path) -> dict:
 def _prepare_bundle_test_env(extracted_root: Path, env_root: Path) -> Path:
     env_root.mkdir(parents=True, exist_ok=True)
     subprocess.run([sys.executable, "-m", "venv", str(env_root)], check=True)
-    python_bin = env_root / "bin" / "python"
+    python_bin = resolve_venv_python(env_root)
     artifacts_dir = extracted_root / "artifacts"
     wheel_paths = sorted(artifacts_dir.glob("*.whl"))
     if not wheel_paths:
@@ -776,10 +822,33 @@ def _prepare_bundle_test_env(extracted_root: Path, env_root: Path) -> Path:
         ],
         check=True,
     )
-    site_packages_matches = sorted((env_root / "lib").glob("python*/site-packages"))
-    if len(site_packages_matches) != 1:
-        raise FileNotFoundError(f"Bundle test environment site-packages not found under {env_root / 'lib'}")
-    return site_packages_matches[0]
+    return resolve_venv_site_packages(env_root)
+
+
+def _discover_catalog_plugins(catalog_root: Path) -> list[tuple[str, Path]]:
+    """Return all valid plugin roots in a standard catalog checkout."""
+    catalog_root = catalog_root.resolve()
+    if not catalog_root.is_dir():
+        raise FileNotFoundError(f"Catalog root not found: {catalog_root}")
+
+    plugins: list[tuple[str, Path]] = []
+    for family in ("sensors", "algorithms"):
+        family_root = catalog_root / family
+        if not family_root.is_dir():
+            continue
+        plugins.extend(
+            (family, candidate)
+            for candidate in sorted(family_root.iterdir())
+            if candidate.is_dir()
+            and candidate.joinpath("plugin.json").is_file()
+            and candidate.joinpath("pyproject.toml").is_file()
+        )
+
+    if not plugins:
+        raise FileNotFoundError(
+            f"No plugins found under {catalog_root / 'sensors'} or {catalog_root / 'algorithms'}"
+        )
+    return plugins
 
 
 def _infer_bundle_plugin_root(bundle_path: Path, plugin_id: str, plugin_type: str) -> Path:

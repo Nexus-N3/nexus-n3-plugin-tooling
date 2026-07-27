@@ -13,6 +13,8 @@ from pathlib import Path
 
 import yaml
 
+from nexus_n3_plugin_cli.plugin_env import resolve_plugin_python
+
 
 @dataclass(frozen=True)
 class DependencyTarget:
@@ -115,19 +117,6 @@ def _load_plugin_manifest(plugin_root: Path) -> dict:
 
     return manifest
 
-def _plugin_python(plugin_root: Path) -> Path:
-    python_bin = plugin_root / ".venv" / "bin" / "python"
-
-    if not python_bin.is_file():
-        raise FileNotFoundError(
-            "Plugin virtual environment not found.\n\n"
-            f"Expected:\n  {python_bin}\n\n"
-            "Create the plugin with:\n"
-            "  nexus-n3-plugin init ...\n\n"
-            "or recreate the plugin environment before building."
-        )
-
-    return python_bin
 
 def build_plugin_bundle(
     plugin_root: Path,
@@ -145,7 +134,7 @@ def build_plugin_bundle(
     _ = force
     plugin_root = plugin_root.resolve()
     output_dir = output_dir.resolve()
-    plugin_python = _plugin_python(plugin_root)
+    plugin_python = resolve_plugin_python(plugin_root)
     extra_artifacts = [artifact.resolve() for artifact in (extra_artifacts or [])]
     dependency_wheelhouses = [wheelhouse.resolve() for wheelhouse in (dependency_wheelhouses or [])]
 

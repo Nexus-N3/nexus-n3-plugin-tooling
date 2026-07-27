@@ -21,6 +21,20 @@ Run this from the directory where the plugin repository should be created.
 The CLI must be installed in the active Python environment or otherwise
 available on `PATH`.
 
+## Prepare An Existing Plugin
+
+A catalog checkout does not commit plugin virtual environments. Prepare a
+plugin after cloning, or whenever its SDK or dependencies change:
+
+```bash
+nexus-n3-plugin prepare --plugin-root /path/to/plugin
+```
+
+This creates `<plugin-root>/.venv` and installs the build tooling, local SDK,
+and plugin in editable mode. Native Windows (`Scripts/python.exe`,
+`Lib/site-packages`) and POSIX (`bin/python`, `lib/pythonX.Y/site-packages`)
+virtual-environment layouts are both supported.
+
 For sensor plugins, the canonical scaffold layout is:
 
 - repo: `nexus-n3-sensor-<plugin-id>`
@@ -139,6 +153,22 @@ Basic usage:
 ```bash
 nexus-n3-plugin build --plugin-root /path/to/plugin --output-dir /tmp/plugin-build --target rpi
 ```
+
+If the plugin environment is missing, `build` prepares it automatically.
+Existing environments can be refreshed explicitly with `nexus-n3-plugin
+prepare`.
+
+Build every plugin in a cloned catalog:
+
+```bash
+nexus-n3-plugin build \
+  --catalog-root /path/to/nexus-n3-plugin-catalog \
+  --output-dir /path/to/nexus-n3-plugin-catalog/plugin-builds \
+  --target win
+```
+
+Catalog output is separated into `plugin-builds/sensors/` and
+`plugin-builds/algorithms/`.
 
 This default build creates a deployment bundle:
 

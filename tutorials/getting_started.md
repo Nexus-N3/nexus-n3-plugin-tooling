@@ -58,6 +58,8 @@ export PATH="$HOME/.local/bin:$PATH"
 
 Create the workspace directories once:
 
+NOTE: this should be updated to say clone the plugin-catalog repo as this is public now
+
 ```bash
 mkdir -p /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-catalog/sensors
 mkdir -p /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-catalog/algorithms
