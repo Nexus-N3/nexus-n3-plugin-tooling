@@ -511,6 +511,7 @@ nexus-n3-plugin-catalog/
       src/
         nexus_n3_sensor_movella_dot/
           plugin.json
+          parser.py
           sensor.py
           samples.py
       tests/

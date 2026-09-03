@@ -107,6 +107,7 @@ cd /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-catalog/sensors/
 Implement the plugin in files such as:
 
 ```text
+src/nexus_n3_sensor_my_sensor/parser.py
 src/nexus_n3_sensor_my_sensor/sensor.py
 src/nexus_n3_sensor_my_sensor/samples.py
 src/nexus_n3_sensor_my_sensor/MySensorSpec.yaml

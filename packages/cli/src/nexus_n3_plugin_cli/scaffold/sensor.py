@@ -56,6 +56,7 @@ def scaffold_sensor_plugin(
     _write_text(package_root / "__init__.py", _render_package_init(template))
     _write_text(package_root / "plugin.json", plugin_manifest)
     _write_text(package_root / "sensor.py", _render_sensor_module(template))
+    _write_text(package_root / "parser.py", _render_parser_module(template))
     _write_text(package_root / "samples.py", _render_samples_module(template))
     _write_text(package_root / template.spec_name, _render_spec(template))
 
@@ -214,6 +215,10 @@ def _render_sensor_module(template: SensorPluginTemplate) -> str:
     if template.adapter.upper() == "BLE":
         transport_assignment = '\n        self.transport_spec = spec.get("transport", {}).get(self.adapter, {})'
     return f'''"""Sensor implementation for {template.display_name}."""\n\nimport logging\n\nfrom nexus_n3_plugin_sdk import SensorBase, SensorType\n\nfrom .samples import {template.sample_class_name}\n\n\nclass {template.class_name}(SensorBase):\n    """Generated sensor plugin skeleton."""\n\n    sensor_type = SensorType("{template.display_name}", {template.manufacturer_id})\n    SAMPLE_CLASS = {template.sample_class_name}\n    SPEC_PATH = "{template.spec_name}"\n\n    def __init__(self, sensor):\n        self.logger = logging.getLogger(self.sensor_type.local_name)\n        spec = self.load_raw_spec()\n        super().__init__(self.sensor_type, spec){transport_assignment}\n\n    def consume_input(self, source_plugin_id: str, payload) -> bool:\n        """Accept forwarded input from another plugin when this plugin needs it."""\n        return False\n\n    async def setup(self, adapter, enable_battery: bool = False, enable_button: bool = False):\n        """Configure the sensor after connect."""\n        return\n\n    async def start_stream(self, adapter):\n        """Start streaming sensor data."""\n        raise NotImplementedError("Implement start_stream() for this sensor plugin")\n\n    async def stop_stream(self, adapter):\n        """Stop streaming sensor data."""\n        raise NotImplementedError("Implement stop_stream() for this sensor plugin")\n'''
+
+
+def _render_parser_module(template: SensorPluginTemplate) -> str:
+    return f'''"""Packet parsing helpers for the {template.display_name} sensor plugin."""\n\nfrom __future__ import annotations\n\n\ndef parse_packet(packet: bytes):\n    """Decode a raw sensor packet into one or more sample objects."""\n    raise NotImplementedError("Implement packet parsing for the {template.display_name} sensor")\n'''
 
 
 def _render_samples_module(template: SensorPluginTemplate) -> str:
