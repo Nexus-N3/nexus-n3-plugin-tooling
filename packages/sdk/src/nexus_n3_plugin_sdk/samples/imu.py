@@ -8,7 +8,13 @@ from .base import SensorSample
 
 @dataclass(frozen=True)
 class IMUSample(SensorSample):
-    """Represents a single timestamped IMU sample."""
+    """Represents a single timestamped IMU sample.
+
+    Sensor plugins must convert vendor-native measurements to the Nexus units
+    before constructing a sample: acceleration in metres per second squared,
+    angular velocity in degrees per second, and timestamps in microseconds.
+    Quaternions are unitless.
+    """
 
     sample_type: ClassVar[str] = "imu"
 

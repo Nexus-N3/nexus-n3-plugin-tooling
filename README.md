@@ -678,11 +678,17 @@ Sensor example:
 nexus-n3-plugin build \
   --plugin-root /path/to/nexus-n3-plugin-catalog/sensors/nexus-n3-sensor-movella-dot \
   --output-dir /path/to/nexus-n3-plugin-catalog/plugin-builds/sensors
-```
 
-nexus-n3-plugin build \
+  nexus-n3-plugin build \
   --plugin-root /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-catalog/sensors/nexus-n3-sensor-movesense \
   --output-dir /home/mike/Desktop/apps/dev/nexus-n3-project/nexus-n3-plugin-catalog/plugin-builds/sensors
+
+  nexus-n3-plugin build \
+  --plugin-root /home/mike/Desktop/apps/dev/rs-nexus-project/nexus-n3-plugin-catalog/sensors/nexus-n3-sensor-x-imu3 \
+  --output-dir /home/mike/Desktop/apps/dev/rs-nexus-project/nexus-n3-plugin-catalog/plugin-builds/sensors
+```
+
+
 
 Algorithm example:
 
