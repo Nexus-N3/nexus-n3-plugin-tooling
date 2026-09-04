@@ -84,6 +84,13 @@ class SensorBase:
         """
         return False
 
+    def reset_session_diagnostics(self) -> None:
+        """Reset optional sensor-owned counters for a new recording session."""
+
+    def get_diagnostics_snapshot(self) -> dict:
+        """Return optional JSON-serializable sensor diagnostics."""
+        return {}
+
     def _emit(self, event: str, payload):
         """Safely emit an event to the registered callback."""
         callback = self.listeners.get(event)
