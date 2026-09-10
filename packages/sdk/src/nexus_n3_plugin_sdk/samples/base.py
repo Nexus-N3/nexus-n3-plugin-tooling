@@ -1,6 +1,6 @@
 """Base sample model copied from nexus-n3-core for plugin authoring."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, List, Optional
 
 
@@ -15,6 +15,11 @@ class SensorSample:
     sampling_rate: Optional[int]
 
     sample_type: ClassVar[str]
+
+    declared_timestamp_source: Optional[str] = field(
+        default=None,
+        kw_only=True,
+    )
 
     @classmethod
     def csv_header(cls) -> List[str]:
