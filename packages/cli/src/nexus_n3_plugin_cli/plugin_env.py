@@ -128,6 +128,7 @@ def prepare_plugin_venv(plugin_root: Path, sdk_root: Path | None = None) -> Path
             "setuptools>=61.0",
             "wheel",
             "build>=1.2",
+            # add pytest to this?
         ],
         check=True,
     )
