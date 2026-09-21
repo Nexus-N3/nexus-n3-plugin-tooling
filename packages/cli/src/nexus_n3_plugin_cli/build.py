@@ -336,6 +336,19 @@ def _build_phase1_manifest(
     spec_path = legacy_manifest.get("spec_path")
     config_path = legacy_manifest.get("config_path")
 
+    routing_inputs = []
+    routing_outputs = []
+
+    if plugin_type == "sensor" and spec_path:
+        package_dir = plugin_root / "src" / legacy_manifest["python_package"]
+        source = package_dir / Path(spec_path).name
+
+        if source.exists():
+            payload = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+
+            routing_inputs = list(payload.get("inputs") or [])
+            routing_outputs = list(payload.get("outputs") or [])
+
     manifest = {
         "schema_version": 1,
         "plugin_id": legacy_manifest["plugin_id"],
@@ -359,8 +372,8 @@ def _build_phase1_manifest(
             "path": spec_path or config_path or "",
         },
         "capabilities": capabilities,
-        "inputs": [],
-        "outputs": [],
+        "inputs": routing_inputs,
+        "outputs": routing_outputs,
         "adapter_requirements": _adapter_requirements(capabilities),
         "permissions": {"network": False, "filesystem_write": False},
         "healthcheck": {
