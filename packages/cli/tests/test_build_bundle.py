@@ -40,7 +40,7 @@ def test_build_sensor_reference_bundle_includes_phase1_files(tmp_path: Path):
         assert manifest["spec"]["type"] == "sensor_yaml"
         assert manifest["entrypoint"]["module"] == "nexus_n3_sensor_movella_dot.sensor"
         assert manifest["target"]["id"] == "rpi"
-        assert manifest["target"]["platform"] == "manylinux2014_aarch64"
+        assert manifest["target"]["platform"] == "manylinux_2_28_aarch64"
 
 
 def test_build_algorithm_reference_bundle_includes_phase1_files(tmp_path: Path):
@@ -67,7 +67,7 @@ def test_build_algorithm_reference_bundle_includes_phase1_files(tmp_path: Path):
         assert "manifest.json" in names
         assert "checksums.json" in names
         assert "metadata/algorithm_config.yaml" in names
-        assert any(name.startswith("artifacts/nexus_n3_algorithm_standard_loading_intensity-0.1.0") for name in names)
+        assert any(name.startswith("artifacts/nexus_n3_algorithm_standard_loading_intensity-0.1.2") for name in names)
         assert any(name.startswith("artifacts/nexus_n3_plugin_sdk-0.1.0") for name in names)
 
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
@@ -124,7 +124,7 @@ def test_dependency_target_from_preset_rpi() -> None:
     target = DependencyTarget.from_preset("rpi")
 
     assert target.target_id == "rpi"
-    assert target.platform == "manylinux2014_aarch64"
+    assert target.platform == "manylinux_2_28_aarch64"
     assert target.python_version == "3.12"
     assert target.implementation == "cp"
     assert target.abi == "cp312"

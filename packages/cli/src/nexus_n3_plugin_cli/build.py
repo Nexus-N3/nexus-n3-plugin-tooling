@@ -30,9 +30,16 @@ class DependencyTarget:
     def from_preset(cls, target_id: str) -> "DependencyTarget":
         normalized = target_id.strip().lower()
         presets = {
+            #"rpi": cls(
+            #    target_id="rpi",
+            #    platform="manylinux2014_aarch64",
+            #    python_version="3.12",
+            #    implementation="cp",
+            #    abi="cp312",
+            #),
             "rpi": cls(
                 target_id="rpi",
-                platform="manylinux2014_aarch64",
+                platform="manylinux_2_28_aarch64",
                 python_version="3.12",
                 implementation="cp",
                 abi="cp312",
