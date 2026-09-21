@@ -138,17 +138,23 @@ class GatewayBLEAdapter:
             sensor.set_connection_status(ConnectionStatus.CONNECTED)
         return connected
 
-    async def set_notify_callback(self, client: GatewayBLETransportClient, uuid, callback):
-        subscribe_as_binary = len(client.notify_callbacks) == 0
+    async def set_notify_callback(self, client: GatewayBLETransportClient, uuid, callback, *, indicate: bool = False,):
+        subscribe_as_binary = (
+            not indicate
+            and len(client.notify_callbacks) == 0
+        )
+
         client.notify_callbacks[str(uuid)] = callback
         if subscribe_as_binary:
             client.binary_notify_uuid = str(uuid)
+
         await asyncio.to_thread(
             self.gateway_client.subscribe_with_retry,
             client.address,
             str(uuid),
             self.runtime_config.gateway_subscribe_timeout_s,
             binary_notifications=subscribe_as_binary,
+            indicate=indicate
         )
 
     async def unset_notify_callback(self, client: GatewayBLETransportClient, uuid):

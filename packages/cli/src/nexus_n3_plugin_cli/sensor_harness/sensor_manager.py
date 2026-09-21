@@ -40,7 +40,14 @@ class SensorManagerAdapterProtocol(Protocol):
     async def write(self, client, uuid, payload):
         ...
 
-    async def set_notify_callback(self, client, uuid, callback):
+    async def set_notify_callback(
+        self,
+        client,
+        uuid,
+        callback,
+        *,
+        indicate: bool = False,
+    ):
         ...
 
     async def unset_notify_callback(self, client, uuid):

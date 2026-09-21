@@ -309,6 +309,7 @@ class GatewaySerialClient:
         timeout_s: float,
         *,
         binary_notifications: bool = False,
+        indicate: bool = False,
         attempts: int = 2,
         retry_delay_s: float = 0.3,
     ) -> None:
@@ -320,6 +321,7 @@ class GatewaySerialClient:
                     characteristic_uuid,
                     timeout_s,
                     binary_notifications=binary_notifications,
+                    indicate=indicate,
                 )
                 return
             except Exception as exc:
@@ -335,6 +337,7 @@ class GatewaySerialClient:
         timeout_s: float,
         *,
         binary_notifications: bool = False,
+        indicate: bool = False,
     ) -> None:
         request_id = self.request_id("subscribe")
         request_queue = self._register_request(request_id)
@@ -346,6 +349,7 @@ class GatewaySerialClient:
                     "address": address,
                     "characteristic_uuid": characteristic_uuid,
                     "binary_notifications": binary_notifications,
+                    "indicate": indicate,
                 }
             )
             self._wait_for_success(request_id, request_queue, "subscribe_complete", timeout_s)

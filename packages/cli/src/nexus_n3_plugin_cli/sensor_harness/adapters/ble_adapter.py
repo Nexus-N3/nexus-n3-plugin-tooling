@@ -69,7 +69,7 @@ class BLEAdapter:
     async def write(self, client, uuid, payload):
         return await client.write_gatt_char(uuid, payload, response=True)
 
-    async def set_notify_callback(self, client, uuid, callback):
+    async def set_notify_callback(self, client, uuid, callback, *, indicate: bool = False):
         def wrapped(sender, data):
             result = callback(sender, data)
             if asyncio.iscoroutine(result):
