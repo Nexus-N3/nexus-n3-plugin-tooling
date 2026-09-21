@@ -45,8 +45,8 @@ class DiscoveryService:
         for adapter, sensors_for_adapter in adapter_groups.items():
             sensor_names = [sensor.name for sensor in sensors_for_adapter]
             print(sensor_names)
-            devices = await adapter.discover_devices(sensor_names, timeout=timeout)
-            matched = self._match_devices(sensor_names, devices)
+            devices = await adapter.discover_devices(sensors_for_adapter, timeout=timeout)
+            matched = self._match_devices(sensors_for_adapter, devices)
             missing = self._missing_sensor_names(sensor_names, matched)
             if missing:
                 emit_to_client("on_discover", {"valid": False, "missing": missing})
@@ -77,18 +77,37 @@ class DiscoveryService:
         return handle_disconnect
 
     @staticmethod
-    def _match_devices(names, devices):
+    def _match_devices(requested_sensors, devices):
         matches = []
         used_addresses = set()
-        for name in names:
+        for requested in requested_sensors:
+            name = requested if isinstance(requested, str) else requested.name
             matched = None
             for address, pair in devices.items():
                 if address in used_addresses:
                     continue
                 device, adv_data = pair
                 local_name = getattr(adv_data, "local_name", None) or getattr(device, "name", None) or ""
-                print("match devices", local_name)
-                if local_name == name or local_name.startswith(name):
+                spec = {} if isinstance(requested, str) else (getattr(requested, "spec", {}) or {})
+                discovery = spec.get("discovery", {}) or {}
+                expected_services = {
+                    str(value).strip().lower()
+                    for value in discovery.get("service_uuids", []) or []
+                    if value
+                }
+                advertised_services = {
+                    str(value).strip().lower()
+                    for value in getattr(adv_data, "service_uuids", ()) or ()
+                    if value
+                }
+                prefixes = discovery.get("local_name_prefixes", []) or []
+                normalized_name = str(local_name).strip().casefold()
+                matched_by_identity = bool(expected_services & advertised_services) or any(
+                    normalized_name.startswith(str(prefix).strip().casefold())
+                    for prefix in prefixes
+                    if str(prefix).strip()
+                )
+                if matched_by_identity or local_name == name or local_name.startswith(name):
                     matched = (device, adv_data, name)
                     used_addresses.add(address)
                     break

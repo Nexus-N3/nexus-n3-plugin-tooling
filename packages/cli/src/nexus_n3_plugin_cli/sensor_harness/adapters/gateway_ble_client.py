@@ -352,6 +352,32 @@ class GatewaySerialClient:
         finally:
             self._unregister_request(request_id)
 
+    def unsubscribe(
+        self,
+        address: str,
+        characteristic_uuid: str,
+        timeout_s: float,
+    ) -> None:
+        request_id = self.request_id("unsubscribe")
+        request_queue = self._register_request(request_id)
+        try:
+            self.send(
+                {
+                    "type": "unsubscribe",
+                    "request_id": request_id,
+                    "address": address,
+                    "characteristic_uuid": characteristic_uuid,
+                }
+            )
+            self._wait_for_success(
+                request_id,
+                request_queue,
+                "unsubscribe_complete",
+                timeout_s,
+            )
+        finally:
+            self._unregister_request(request_id)
+
     def write_gatt(
         self,
         address: str,

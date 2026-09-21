@@ -60,12 +60,33 @@ class GatewayBLEAdapter:
         self.transport_clients[address.strip().upper()] = client
         return client
 
-    async def discover_devices(self, names: list[str], timeout: float = 5.0):
+    async def discover_devices(self, requested, timeout: float = 5.0):
         timeout_ms = max(int(timeout * 1000.0), 1000)
-        requested_names = [str(name).strip() for name in names if str(name).strip()]
+        requested_names = []
+        requires_unfiltered_scan = False
+        for item in requested:
+            name = item if isinstance(item, str) else getattr(item, "name", "")
+            if not isinstance(item, str):
+                spec = getattr(item, "spec", {}) or {}
+                discovery = spec.get("discovery", {}) or {}
+                if discovery.get("service_uuids"):
+                    requires_unfiltered_scan = True
+                prefixes = discovery.get("local_name_prefixes", []) or []
+                if prefixes:
+                    requested_names.extend(
+                        str(prefix).strip() for prefix in prefixes if str(prefix).strip()
+                    )
+                    continue
+            normalized = str(name).strip()
+            if normalized:
+                requested_names.append(normalized)
         unique_names = sorted(set(requested_names))
 
-        if len(unique_names) == 1:
+        if requires_unfiltered_scan or not unique_names:
+            devices = await asyncio.to_thread(
+                lambda: self.gateway_client.scan(timeout_ms)
+            )
+        elif len(unique_names) == 1:
             devices = await asyncio.to_thread(
                 lambda: self.gateway_client.scan(
                     timeout_ms,
@@ -129,6 +150,18 @@ class GatewayBLEAdapter:
             self.runtime_config.gateway_subscribe_timeout_s,
             binary_notifications=subscribe_as_binary,
         )
+
+    async def unset_notify_callback(self, client: GatewayBLETransportClient, uuid):
+        characteristic_uuid = str(uuid)
+        await asyncio.to_thread(
+            self.gateway_client.unsubscribe,
+            client.address,
+            characteristic_uuid,
+            self.runtime_config.gateway_subscribe_timeout_s,
+        )
+        client.notify_callbacks.pop(characteristic_uuid, None)
+        if client.binary_notify_uuid == characteristic_uuid:
+            client.binary_notify_uuid = None
 
     async def write(self, client: GatewayBLETransportClient, uuid, payload):
         return await asyncio.to_thread(

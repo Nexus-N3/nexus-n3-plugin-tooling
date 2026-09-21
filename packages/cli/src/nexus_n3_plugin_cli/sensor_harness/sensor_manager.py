@@ -43,6 +43,9 @@ class SensorManagerAdapterProtocol(Protocol):
     async def set_notify_callback(self, client, uuid, callback):
         ...
 
+    async def unset_notify_callback(self, client, uuid):
+        ...
+
     def create_transport_client(self, address: str, loop=None, disconnected_callback=None):
         ...
 

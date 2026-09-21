@@ -32,16 +32,17 @@ class BLEAdapter:
         BleakClient, _ = self._import_bleak()
         return BleakClient(address, disconnected_callback=disconnected_callback)
 
-    async def discover_devices(self, names: list[str], timeout: float = 5.0):
+    async def discover_devices(self, requested, timeout: float = 5.0):
         _, BleakScanner = self._import_bleak()
         discovered = await BleakScanner.discover(timeout=timeout, return_adv=True)
         device_map = {}
         for address, pair in discovered.items():
             device, adv_data = pair
             local_name = getattr(adv_data, "local_name", None) or getattr(device, "name", None) or ""
-            if names and not any(local_name == name or local_name.startswith(name) for name in names):
-                continue
-            normalized_adv = SimpleNamespace(local_name=local_name)
+            normalized_adv = SimpleNamespace(
+                local_name=local_name,
+                service_uuids=tuple(getattr(adv_data, "service_uuids", ()) or ()),
+            )
             device_map[address] = (device, normalized_adv)
         return device_map
 
@@ -76,3 +77,6 @@ class BLEAdapter:
             return result
 
         return await client.start_notify(uuid, wrapped)
+
+    async def unset_notify_callback(self, client, uuid):
+        return await client.stop_notify(uuid)
