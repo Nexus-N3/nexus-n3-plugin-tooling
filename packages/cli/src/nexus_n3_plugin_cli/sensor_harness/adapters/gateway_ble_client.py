@@ -209,21 +209,46 @@ class GatewaySerialClient:
                         continue
                     if name_prefix_filter is not None and not name.startswith(name_prefix_filter):
                         continue
+
                     address = self._normalize_address(msg.get("address"))
-                    if not address or address in matches:
+                    if not address:
                         continue
+
                     service_uuids = tuple(
                         str(value).lower()
                         for value in msg.get("service_uuids", [])
                         if isinstance(value, str)
                     )
+
+                    existing = matches.get(address)
+
+                    if existing is not None:
+                        name = name or existing.name
+
+                        service_uuids = tuple(
+                            dict.fromkeys(
+                                existing.service_uuids + service_uuids
+                            )
+                        )
+
+                        rssi = (
+                            msg.get("rssi")
+                            if msg.get("rssi") is not None
+                            else existing.rssi
+                        )
+                    else:
+                        rssi = msg.get("rssi")
+
                     matches[address] = DiscoveredDevice(
                         address=address,
                         name=name,
-                        rssi=msg.get("rssi"),
+                        rssi=rssi,
                         service_uuids=service_uuids,
                         raw=dict(msg),
-                    )
+)
+
+
+                    
                     print("matches in ble gateway client", matches)
                     continue
                 if msg_type == "scan_complete" and msg.get("request_id") == request_id:
@@ -424,13 +449,13 @@ class GatewaySerialClient:
             deadline = time.time() + timeout_s
             while time.time() < deadline:
                 msg = self._wait_for_message(request_queue, deadline)
-                if msg.get("type") == "read_complete" and msg.get("request_id") == request_id:
+                if msg.get("type") == "read_result" and msg.get("request_id") == request_id:
                     return bytes.fromhex(str(msg.get("payload_hex", "")))
                 if msg.get("type") == "error" and msg.get("request_id") == request_id:
                     raise RuntimeError(
                         f"Gateway read failed: {msg.get('message')} ({msg.get('error_code')})"
                     )
-            raise TimeoutError(f"Timed out waiting for read_complete address={address}")
+            raise TimeoutError(f"Timed out waiting for read_result address={address}")
         finally:
             self._unregister_request(request_id)
 
