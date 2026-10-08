@@ -169,7 +169,7 @@ class GatewayBLEAdapter:
         if client.binary_notify_uuid == characteristic_uuid:
             client.binary_notify_uuid = None
 
-    async def write(self, client: GatewayBLETransportClient, uuid, payload):
+    async def write(self, client: GatewayBLETransportClient, uuid, payload, *, best_effort: bool = False):
         return await asyncio.to_thread(
             self.gateway_client.write_gatt,
             client.address,

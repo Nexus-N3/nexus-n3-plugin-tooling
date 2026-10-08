@@ -66,7 +66,7 @@ class BLEAdapter:
     async def read(self, client, uuid):
         return await client.read_gatt_char(uuid)
 
-    async def write(self, client, uuid, payload):
+    async def write(self, client, uuid, payload, *, best_effort: bool = False):
         return await client.write_gatt_char(uuid, payload, response=True)
 
     async def set_notify_callback(self, client, uuid, callback, *, indicate: bool = False):
